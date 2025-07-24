@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+@import "tailwindcss";
+
+@layer base {
+  * {
+    font-family: "Lexend", sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+
+  button {
+    @apply cursor-pointer;
+  }
+}
+
+@theme {
+  --color-background: #171717;
+  --color-container: #4D4D4D;
+  --color-detail: #DEDEDE;
+  --color-text: #FEF8E8;
+  --color-vibrant: #F25623;
+}
