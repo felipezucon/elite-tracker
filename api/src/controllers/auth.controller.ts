@@ -14,7 +14,7 @@ export class AuthController {
 		try {
 			const redirectUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}`;
 
-			res.redirect(redirectUrl);
+			res.status(200).json({ redirectUrl });
 		} catch (err) {
 			if (isAxiosError(err)) {
 				return res.status(400).json(err.response?.data);

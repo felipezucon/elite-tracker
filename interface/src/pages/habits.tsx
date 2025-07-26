@@ -1,8 +1,11 @@
 import { PaperPlaneRightIcon, PencilIcon, TrashIcon } from '@phosphor-icons/react';
+import { Sidebar } from '../components/sidebar';
 
 export function Habits() {
+
 	return (
-		<div className="h-screen bg-background text-text">
+		<div className="flex h-screen w-screen"><Sidebar /> 
+		<div className="h-screen flex-1 bg-background text-text">
 			<div className="h-screen w-2/3 border-r-1 p-5 border-r-detail">
 				<header>
 					<h1 className="font-semibold text-2xl">Hábitos Diários</h1>
@@ -21,19 +24,22 @@ export function Habits() {
 						size={24}
 					/>
 				</div>
-				<div className="flex items-center justify-between w-full h-12 border-b border-b-detail">
-					<p className='text-lg'>Estudar Inglês</p>
-					<div className="flex items-center justify-between w-[90px]">
-						<PencilIcon size={20}/>
-						{/*  */}
-						
+				{/* Container Hábitos */}
+				<div className="rounded-sm">
+					<div className="flex items-center justify-between w-full h-12 border-b border-b-detail p-5">
+						<p className="text-lg">Estudar Inglês</p>
+						<div className="flex items-center justify-between w-[90px]">
+							<PencilIcon size={20} />
+							{/*  */}
+
 							<input type="checkbox" className="" />
-							
-						{/*  */}
-						<TrashIcon size={20} />
+
+							{/*  */}
+							<TrashIcon size={20} />
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		</div></div>
 	);
 }
