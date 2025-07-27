@@ -1,15 +1,18 @@
 import { ListChecksIcon, SignOutIcon, TimerIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router';
+import { useUser } from '../hooks/use-user';
 
 export function Sidebar() {
+	const { userData } = useUser();
+
 	return (
 		<div className="flex flex-col items-center w-20 bg-neutral-950 h-screen py-4">
 			<img
-				src="http://github.com/felipezucon.png"
+				src={userData.avatar}
 				alt="user-photo"
 				className="w-12.5 h-12.5 rounded-full"
 			/>
-			<div className='flex flex-col mt-10 gap-5'>
+			<div className="flex flex-col mt-10 gap-5">
 				<Link to="/">
 					<ListChecksIcon size={32} className="text-detail hover:text-detail/80" />
 				</Link>
