@@ -1,7 +1,79 @@
 import { PaperPlaneRightIcon, PencilIcon, TrashIcon } from '@phosphor-icons/react';
 import { Sidebar } from '../components/sidebar';
+import { useEffect, useRef, useState } from 'react';
+import { api } from '../services/api';
+import dayjs from 'dayjs';
+
+type Habits = {
+	_id: string;
+	name: string;
+	completedDates: string[];
+	userId: string;
+	createdAt: string;
+	updatedAt: string;
+};
 
 export function Habits() {
+	const [habits, setHabits] = useState<Habits[]>([]);
+
+	function formatarDataCustomizada(data: Date): string {
+		const dataFormatada = new Intl.DateTimeFormat('pt-BR', {
+			dateStyle: 'full',
+			timeZone: 'America/Sao_Paulo',
+		}).format(data);
+
+		return dataFormatada
+			.replace(/^./, (letra) => letra.toUpperCase())
+			.replace(/\b(de|do|da|dos|das)\b/g, (p) => p.toLowerCase())
+			.replace(/\b[a-zà-ú]+\b/gi, (palavra) => {
+				if (['de', 'do', 'da', 'dos', 'das'].includes(palavra.toLowerCase())) {
+					return palavra;
+				}
+				return palavra.charAt(0).toUpperCase() + palavra.slice(1);
+			});
+	}
+
+	const nameInput = useRef<HTMLInputElement>(null);
+
+	const today = dayjs().startOf('day').toISOString();
+
+	async function loadHabits() {
+		const { data } = await api.get<Habits[]>('habits');
+
+		setHabits(data);
+	}
+
+	async function handleSubmit() {
+		const name = nameInput.current?.value;
+
+		if (name) {
+			await api.post('/habits', {
+				name,
+			});
+
+			if (nameInput.current) {
+				nameInput.current.value = '';
+			}
+
+			await loadHabits();
+		}
+	}
+
+	async function handleToggle(id: string) {
+		await api.patch(`/habits/${id}/toggle`);
+
+		await loadHabits();
+	}
+
+	async function handleDelete(id: string) {
+		await api.delete(`/habits/${id}`);
+
+		await loadHabits();
+	}
+
+	useEffect(() => {
+		loadHabits();
+	}, []);
 
 	return (
 		<div className="flex h-screen w-screen">
@@ -10,33 +82,51 @@ export function Habits() {
 				<div className="h-screen w-2/3 border-r-1 p-5 border-r-detail">
 					<header>
 						<h1 className="font-semibold text-2xl">Hábitos Diários</h1>
-						<span className="mt-4 text-sm font-light">Quarta-feira, 23 de Julho de 2025</span>
+						<span className="mt-4 text-sm font-light">{formatarDataCustomizada(new Date())}</span>
 					</header>
 					<div className="w-full h-9 px-2.5 flex items-center justify-between border border-detail rounded-sm my-10">
 						<input
 							type="text"
-							name=""
-							id=""
+							ref={nameInput}
 							className="w-[95%] text-lg focus:outline-none placeholder:pl-2 placeholder:text-detail/50"
 							placeholder="Digite aqui um novo hábito"
 						/>
 						<PaperPlaneRightIcon
 							className="mx-auto text-detail/50 cursor-pointer hover:text-vibrant transition-colors"
 							size={24}
+							onClick={handleSubmit}
 						/>
 					</div>
 					{/* Container Hábitos */}
 					<div className="rounded-sm">
-						<div className="flex items-center justify-between w-full h-12 border-b border-b-detail p-5">
-							<p className="text-lg">Estudar Inglês</p>
-							<div className="flex items-center justify-between w-[90px]">
-								<PencilIcon size={20} />
-								<input type="checkbox" className="" />
-								<TrashIcon size={20} />
+						{habits.map((item) => (
+							<div
+								key={item._id}
+								className="flex items-center justify-between w-full h-12 border-b border-b-detail p-5"
+							>
+								<p className="text-lg">{item.name}</p>
+								<div className="flex items-center justify-between w-[90px]">
+									<PencilIcon
+										size={20}
+										className="cursor-pointer hover:text-blue-500/50 transition-colors"
+									/>
+									<input
+										type="checkbox"
+										className=""
+										checked={item.completedDates.some((item) => item === today)}
+										onChange={() => handleToggle(item._id)}
+									/>
+									<TrashIcon
+										size={20}
+										className="cursor-pointer hover:text-red-500/50 transition-colors"
+										onClick={() => handleDelete(item._id)}
+									/>
+								</div>
 							</div>
-						</div>
+						))}
 					</div>
 				</div>
-			</div></div>
+			</div>
+		</div>
 	);
 }
