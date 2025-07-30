@@ -11,6 +11,7 @@ export type UserData = {
 type UserContextProps = {
 	getUserInfo: (githubCode: string) => Promise<void>;
 	userData: UserData;
+	logout: () => void;
 };
 
 type UserProviderProps = {
@@ -40,11 +41,17 @@ export function UserProvider({ children }: UserProviderProps) {
 	}
 
 	async function loadUserData() {
-		const localData = localStorage.getItem('elitetracker:userData');
+		const localData = localStorage.getItem(userLocalStorageKey);
 
 		if (localData) {
 			setUserData(JSON.parse(localData) as UserData);
 		}
+	}
+
+	async function logout() {
+		setUserData({} as UserData);
+
+		localStorage.removeItem(userLocalStorageKey);
 	}
 
 	useEffect(() => {
@@ -52,7 +59,9 @@ export function UserProvider({ children }: UserProviderProps) {
 	}, []);
 
 	return (
-		<UserContext.Provider value={{ userData, getUserInfo }}> {children} </UserContext.Provider>
+		<UserContext.Provider value={{ userData, getUserInfo, logout }}>
+			{children}
+		</UserContext.Provider>
 	);
 }
 

@@ -17,9 +17,23 @@ export function Auth() {
 		handleAuth();
 	}, []);
 
+const text = "Loading...".split("");
+
 	return (
-		<div className="flex flex-col items-center justify-center min-h-screen bg-background">
-			<h1 className="text-vibrant text-4xl">Loading...</h1>
+		
+		<div className="flex items-center justify-center w-screen h-screen bg-background">
+			<h1 className="text-[50px] font-bold text-vibrant">
+				{text.map((letter, index) => (
+					<span
+						key={index}
+						className={`bounce bounce-delay-${index}`}
+					>
+						{letter}
+					</span>
+				))}
+			</h1>
 		</div>
 	);
 }
+
+

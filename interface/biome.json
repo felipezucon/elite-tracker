@@ -20,7 +20,7 @@
 			"correctness": {
 				"useExhaustiveDependencies": "off"
 			}
-		}
+		}	
 	},
 	"javascript": {
 		"formatter": {
