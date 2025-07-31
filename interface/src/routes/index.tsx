@@ -3,6 +3,7 @@ import { Login } from '../pages/login';
 import { Habits } from '../pages/habits';
 import { Auth } from '../pages/auth';
 import { PrivateRoutes } from './private-routes';
+import { Focus } from '../pages/focus';
 
 export const router = createBrowserRouter([
 	{
@@ -16,5 +17,9 @@ export const router = createBrowserRouter([
 	{
 		path: '/',
 		element: <PrivateRoutes component={<Habits />} />,
+	},
+	{
+		path: '/focus',
+		element: <PrivateRoutes component={<Focus />} />,
 	},
 ]);
