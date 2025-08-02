@@ -22,8 +22,8 @@ export function Header({ title }: HeaderProps) {
 
 	return (
 		<header>
-			<h1 className="font-semibold text-2xl">{title}</h1>
-			<span className="mt-4 text-sm font-light">{formatarDataCustomizada(new Date())}</span>
+			<h1 className="font-semibold text-2xl text-text">{title}</h1>
+			<span className="mt-4 text-sm font-light text-text">{formatarDataCustomizada(new Date())}</span>
 		</header>
 	);
 }

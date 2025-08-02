@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 import dayjs from 'dayjs';
 import { Header } from '../components/header';
+import { Info } from '../components/info';
+import clsx from 'clsx';
+import { Calendar } from '@mantine/dates';
 
 type Habits = {
 	_id: string;
@@ -13,12 +16,23 @@ type Habits = {
 	updatedAt: string;
 };
 
+type HabitsMetrics = {
+	_id: string;
+	name: string;
+	completedDates: string[];
+};
+
 export function Habits() {
 	const [habits, setHabits] = useState<Habits[]>([]);
-
+	const [metrics, setMetrics] = useState<HabitsMetrics>({} as HabitsMetrics);
+	const [selectHabit, setSelectHabit] = useState<Habits | null>(null);
 	const nameInput = useRef<HTMLInputElement>(null);
 
 	const today = dayjs().startOf('day').toISOString();
+
+	async function handleSelect(habit: Habits) {
+		setSelectHabit(habit);
+	}
 
 	async function loadHabits() {
 		const { data } = await api.get<Habits[]>('habits');
@@ -59,8 +73,8 @@ export function Habits() {
 	}, []);
 
 	return (
-		<div className="h-screen flex-1 bg-background text-text">
-			<div className="h-screen w-2/3 border-r-1 p-5 border-r-detail">
+		<div className="h-screen w-full grid-cols-[60%_1fr] flex bg-background text-text">
+			<div className="w-full border-r-1 p-5 border-r-detail">
 				<Header title="Hábitos diários" />
 				<div className="w-full h-9 px-2.5 flex items-center justify-between border border-detail rounded-sm my-10">
 					<input
@@ -80,9 +94,15 @@ export function Habits() {
 					{habits.map((item) => (
 						<div
 							key={item._id}
-							className="flex items-center justify-between w-full h-12 border-b border-b-detail p-5"
+							className={clsx(
+								'flex items-center justify-between w-full h-12 border-b border-b-detail p-5 hover:bg-container',
+								item._id === selectHabit?._id && 'bg-container',
+							)}
 						>
-							<p className="text-lg">{item.name}</p>
+							{/** biome-ignore lint/a11y/useKeyWithClickEvents: <> */}
+							<p onClick={() => handleSelect(item)} className="text-lg cursor-pointer w-full">
+								{item.name}
+							</p>
 							<div className="flex items-center justify-between w-[90px]">
 								<PencilIcon
 									size={20}
@@ -102,6 +122,17 @@ export function Habits() {
 							</div>
 						</div>
 					))}
+				</div>
+			</div>
+			{/* Metricas */}
+			<div className="p-5">
+				<h2 className="font-semibold text-2xl mt-5">Estudar Inglês</h2>
+				<div className="flex items-center justify-center py-10 gap-20 border-b border-detail">
+					<Info value="20/30" label="Dias concluídos" />
+					<Info value="66%" label="Porcentagem" />
+				</div>
+				<div className="flex items-center justify-center mt-10">
+					<Calendar />
 				</div>
 			</div>
 		</div>
