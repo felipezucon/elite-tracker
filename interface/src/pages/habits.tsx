@@ -1,11 +1,12 @@
 import { PaperPlaneRightIcon, PencilIcon, TrashIcon } from '@phosphor-icons/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { api } from '../services/api';
 import dayjs from 'dayjs';
 import { Header } from '../components/header';
 import { Info } from '../components/info';
 import clsx from 'clsx';
 import { Calendar } from '@mantine/dates';
+import { Indicator } from '@mantine/core';
 
 type Habits = {
 	_id: string;
@@ -28,14 +29,36 @@ export function Habits() {
 	const [selectHabit, setSelectHabit] = useState<Habits | null>(null);
 	const nameInput = useRef<HTMLInputElement>(null);
 
-	const today = dayjs().startOf('day').toISOString();
+	const today = dayjs().startOf('day');
 
-	async function handleSelect(habit: Habits) {
+	const metricsInfo = useMemo(() => {
+		const numberOfDaysInAMonth = today.endOf('month').get('date');
+		const numberOfDaysCompleted = metrics.completedDates ? metrics?.completedDates?.length : 0;
+
+		const datesCompletedPerMonth = `${numberOfDaysCompleted}/${numberOfDaysInAMonth}`;
+
+		const percentageCompletedPerMonth = `${Math.round((numberOfDaysCompleted / numberOfDaysInAMonth) * 100)}%`;
+
+		return {
+			datesCompletedPerMonth,
+			percentageCompletedPerMonth,
+		};
+	}, [metrics]);
+
+	async function handleSelect(habit: Habits, currentMonth?: dayjs.Dayjs) {
 		setSelectHabit(habit);
+
+		const { data } = await api.get<HabitsMetrics>(`/habits/${habit._id}/metrics`, {
+			params: {
+				date: currentMonth?.toISOString() ?? today.startOf('month').toISOString(),
+			},
+		});
+
+		setMetrics(data);
 	}
 
 	async function loadHabits() {
-		const { data } = await api.get<Habits[]>('habits');
+		const { data } = await api.get<Habits[]>('/habits');
 
 		setHabits(data);
 	}
@@ -56,16 +79,25 @@ export function Habits() {
 		}
 	}
 
-	async function handleToggle(id: string) {
-		await api.patch(`/habits/${id}/toggle`);
+	async function handleToggle(habit: Habits) {
+		await api.patch(`/habits/${habit._id}/toggle`);
 
 		await loadHabits();
+		await handleSelect(habit);
 	}
 
 	async function handleDelete(id: string) {
 		await api.delete(`/habits/${id}`);
 
+		setMetrics({} as HabitsMetrics);
+		setSelectHabit(null);
+
 		await loadHabits();
+	}
+
+	async function handleSelectMonth(date: Date | string) {
+		const parsedDate = dayjs(date);
+		await handleSelect(selectHabit as Habits, parsedDate);
 	}
 
 	useEffect(() => {
@@ -111,8 +143,8 @@ export function Habits() {
 								<input
 									type="checkbox"
 									className=""
-									checked={item.completedDates.some((item) => item === today)}
-									onChange={() => handleToggle(item._id)}
+									checked={item.completedDates.some((item) => item === today.toISOString())}
+									onChange={() => handleToggle(item)}
 								/>
 								<TrashIcon
 									size={20}
@@ -125,15 +157,44 @@ export function Habits() {
 				</div>
 			</div>
 			{/* Metricas */}
-			<div className="p-5">
-				<h2 className="font-semibold text-2xl mt-5">Estudar Inglês</h2>
-				<div className="flex items-center justify-center py-10 gap-20 border-b border-detail">
-					<Info value="20/30" label="Dias concluídos" />
-					<Info value="66%" label="Porcentagem" />
-				</div>
-				<div className="flex items-center justify-center mt-10">
-					<Calendar />
-				</div>
+			<div className="w-[40%]">
+				{selectHabit && (
+					<div className="p-5">
+						<h2 className="font-semibold text-2xl mt-5">{selectHabit.name}</h2>
+						<div className="flex items-center justify-center py-10 gap-20 border-b border-detail">
+							<Info value={metricsInfo.datesCompletedPerMonth} label="Dias concluídos" />
+							<Info value={metricsInfo.percentageCompletedPerMonth} label="Porcentagem" />
+						</div>
+						<div className="flex items-center justify-center mt-10">
+							<Calendar
+								className="z-10"
+								static
+								onMonthSelect={handleSelectMonth}
+								onPreviousMonth={handleSelectMonth}
+								onNextMonth={handleSelectMonth}
+								renderDay={(date) => {
+									const day = dayjs(date).date();
+									const isSameDate = metrics?.completedDates?.some((item) =>
+										dayjs(item).isSame(dayjs(date)),
+									);
+
+									return (
+										<Indicator
+											size={24}
+											color="#F25623"
+											withBorder={false}
+											position="middle-center"
+											disabled={!isSameDate}
+											zIndex={0}
+										>
+											<div className="relative z-10">{day}</div>
+										</Indicator>
+									);
+								}}
+							/>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);

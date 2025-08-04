@@ -56,3 +56,15 @@
     appearance: none;
 }
 
+[data-mantine-color-scheme="dark"] .m_396ce5cb[data-weekend] {
+  color: #9c1c1c !important;
+}
+
+[data-mantine-color-scheme="dark"] .m_396ce5cb[data-outside] {
+    color: #171717 !important;
+    opacity: 95% !important;
+}
+
+.m_396ce5cb[data-selected] {
+  background-color: var(--color-vibrant) !important;
+}

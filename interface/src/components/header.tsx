@@ -1,29 +1,48 @@
+import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br';
+import updateLocale from 'dayjs/plugin/updateLocale';
+
+dayjs.extend(updateLocale);
+
+dayjs.updateLocale('pt-br', {
+	months: [
+		'Janeiro',
+		'Fevereiro',
+		'Março',
+		'Abril',
+		'Maio',
+		'Junho',
+		'Julho',
+		'Agosto',
+		'Setembro',
+		'Outubro',
+		'Novembro',
+		'Dezembro',
+	],
+	weekdays: [
+		'Domingo',
+		'Segunda-feira',
+		'Terça-feira',
+		'Quarta-feira',
+		'Quinta-feira',
+		'Sexta-feira',
+		'Sábado',
+	],
+});
+
+dayjs.locale('pt-br');
+
 type HeaderProps = {
 	title: string;
 };
 
 export function Header({ title }: HeaderProps) {
-	function formatarDataCustomizada(data: Date): string {
-		const dataFormatada = new Intl.DateTimeFormat('pt-BR', {
-			dateStyle: 'full',
-			timeZone: 'America/Sao_Paulo',
-		}).format(data);
-
-		return dataFormatada
-			.replace(/^./, (letra) => letra.toUpperCase())
-			.replace(/\b(de|do|da|dos|das)\b/g, (p) => p.toLowerCase())
-			.replace(/\b[a-zà-ú]+\b/gi, (palavra) => {
-				if (['de', 'do', 'da', 'dos', 'das'].includes(palavra.toLowerCase())) {
-					return palavra;
-				}
-				return palavra.charAt(0).toUpperCase() + palavra.slice(1);
-			});
-	}
+	const today = dayjs().startOf('day').format('dddd, DD [de] MMMM [de] YYYY');
 
 	return (
 		<header>
 			<h1 className="font-semibold text-2xl text-text">{title}</h1>
-			<span className="mt-4 text-sm font-light text-text">{formatarDataCustomizada(new Date())}</span>
+			<span className="mt-4 text-sm font-light text-text">{today}</span>
 		</header>
 	);
 }

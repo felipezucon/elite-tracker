@@ -1,12 +1,13 @@
 import { MinusCircleIcon, PlusCircleIcon } from '@phosphor-icons/react';
 import { Header } from '../components/header';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '../components/button';
 import { useTimer } from 'react-timer-hook';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { api } from '../services/api';
 import { Info } from '../components/info';
 import { Calendar } from '@mantine/dates';
+import { Indicator } from '@mantine/core';
 
 type Timers = {
 	focus: number;
@@ -18,6 +19,20 @@ enum TimerState {
 	FOCUS = 'FOCUS',
 	REST = 'REST',
 }
+
+type FocusMetrics = {
+	_id: [number, number, number];
+	count: number;
+};
+
+type FocusTime = {
+	_id: string;
+	timeFrom: string;
+	timeTo: string;
+	userId: string;
+	createdAt: string;
+	uptadedAt: string;
+};
 
 const timerStateTitle = {
 	[TimerState.PAUSED]: 'Pausado',
@@ -31,6 +46,10 @@ export function Focus() {
 	const [timers, setTimers] = useState<Timers>({ focus: 0, rest: 0 });
 	const [timerState, setTimerState] = useState<TimerState>(TimerState.PAUSED);
 	const [timeFrom, setTimeFrom] = useState<Date | null>(null);
+	const [focusMetrics, setFocusMetrics] = useState<FocusMetrics[]>([]);
+	const [currentMonth, setCurrentMonth] = useState<dayjs.Dayjs>(dayjs().startOf('month'));
+	const [currentDate, setCurrentDate] = useState<dayjs.Dayjs>(dayjs().startOf('day'));
+	const [focusTimes, setFocusTimes] = useState<FocusTime[]>([]);
 
 	function addSeconds(date: Date, seconds: number) {
 		const time = dayjs(date).add(seconds, 'seconds');
@@ -166,6 +185,91 @@ export function Focus() {
 		setTimerState(TimerState.REST);
 	}
 
+	async function loadFocusMetrics(currentMonth: string) {
+		setFocusMetrics([]);
+
+		const { data } = await api.get<FocusMetrics[]>('/focus-time/metrics', {
+			params: {
+				date: currentMonth,
+			},
+		});
+
+		setFocusMetrics(data);
+	}
+
+	async function loadFocusTimes(currentMonth: string) {
+		setFocusTimes([]);
+
+		const { data } = await api.get<FocusTime[]>('/focus-time', {
+			params: {
+				date: currentMonth,
+			},
+		});
+
+		setFocusTimes(data);
+	}
+
+	async function handleSelectMonth(date: Date | string) {
+		await setCurrentMonth(dayjs(date));
+	}
+
+	async function handleSelectDay(date: Date | string) {
+		await setCurrentDate(dayjs(date));
+	}
+
+	const metricsInfoByDay = useMemo(() => {
+		const timesMetrics = focusTimes.map((item) => ({
+			timeFrom: dayjs(item.timeFrom),
+			timeTo: dayjs(item.timeTo),
+		}));
+
+		console.log(timesMetrics);
+
+		let totalTimeInMinutes = 0;
+
+		if (timesMetrics.length) {
+			for (const { timeFrom, timeTo } of timesMetrics) {
+				const diff = timeTo.diff(timeFrom, 'minutes');
+
+				totalTimeInMinutes += diff;
+			}
+		}
+
+		return {
+			timesMetrics,
+			totalTimeInMinutes,
+		};
+	}, [focusTimes]);
+
+	const metricsInfoByMonth = useMemo(() => {
+		const completedDates: string[] = [];
+		let counter: number = 0;
+
+		if (focusMetrics.length) {
+			focusMetrics.forEach((item) => {
+				const date = dayjs(`${item._id[0]}-${item._id[1]}-${item._id[2]}`)
+					.startOf('day')
+					.toISOString();
+
+				completedDates.push(date);
+				counter += item.count;
+			});
+		}
+
+		return {
+			completedDates,
+			counter,
+		};
+	}, [focusMetrics]);
+
+	useEffect(() => {
+		loadFocusMetrics(currentMonth.toISOString());
+	}, [currentMonth]);
+
+	useEffect(() => {
+		loadFocusTimes(currentDate.toISOString());
+	}, [currentDate]);
+
 	return (
 		<div className="h-screen w-full grid-cols-[60%_1fr] flex bg-background">
 			<div className="w-full border-r-1 p-5 border-r-detail">
@@ -267,15 +371,47 @@ export function Focus() {
 				</div>
 			</div>
 			{/* Metricas */}
-			<div className="p-5">
-				<h2 className="font-semibold text-2xl mt-5 text-text">Estudar Inglês</h2>
-				<div className="flex items-center justify-center py-10 gap-20 border-b border-detail">
-					<Info value="20/30" label="Dias concluídos" />
-					<Info value="66%" label="Porcentagem" />
-				</div>
-				<div className="flex items-center justify-center mt-10">
-					<Calendar />
-				</div>
+			<div className="w-[40%]">
+				{
+					<div className="p-5">
+						<h2 className="font-semibold text-2xl mt-5">Estatísticas</h2>
+						<div className="flex items-center justify-center py-10 gap-20 border-b border-detail">
+							<Info value={String(metricsInfoByMonth.counter)} label="Ciclos totais" />
+							<Info value={`${metricsInfoByDay.totalTimeInMinutes} min`} label="Tempo de foco" />
+						</div>
+						<div className="flex items-center justify-center mt-10">
+							<Calendar
+								className="z-10"
+								onMonthSelect={handleSelectMonth}
+								onPreviousMonth={handleSelectMonth}
+								onNextMonth={handleSelectMonth}
+								getDayProps={(date) => ({
+									selected: dayjs(date).isSame(currentDate),
+									onClick: () => handleSelectDay(date),
+								})}
+								  renderDay={(date) => {
+								 	const day = dayjs(date).date();
+								 	const isSameDate = metricsInfoByMonth?.completedDates?.some((item) =>
+								 		dayjs(item).isSame(dayjs(date)),
+								 	);
+
+								 	return (
+								 		<Indicator
+								 			size={24}
+								 			color="#F25623"
+								 			withBorder={false}
+								 			position="middle-center"
+								 			disabled={!isSameDate}
+								 			zIndex={0}
+								 		>
+								 			<div className="relative z-10">{day}</div>
+								 		</Indicator>
+								 	);
+								}}
+							/>
+						</div>
+					</div>
+				}
 			</div>
 		</div>
 	);
